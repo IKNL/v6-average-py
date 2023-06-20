@@ -1,8 +1,9 @@
 import time
 
 from vantage6.tools.util import info
+from vantage6.client.algorithm_client import AlgorithmClient
 
-def master(client, data, column_name):
+def master(client: AlgorithmClient, data, column_name):
     """Combine partials to global model
 
     First we collect the parties that participate in the collaboration.
@@ -27,7 +28,7 @@ def master(client, data, column_name):
 
     # Collect all organization that participate in this collaboration.
     # These organizations will receive the task to compute the partial.
-    organizations = client.get_organizations_in_my_collaboration()
+    organizations = client.organization.list()
     ids = [organization.get("id") for organization in organizations]
 
     # Request all participating parties to compute their partial. This
@@ -35,7 +36,7 @@ def master(client, data, column_name):
     # We've used a kwarg but is is also possible to use `args`. Although
     # we prefer kwargs as it is clearer.
     info('Requesting partial computation')
-    task = client.create_new_task(
+    task = client.task.create(
         input_={
             'method': 'average_partial',
             'kwargs': {
@@ -51,15 +52,15 @@ def master(client, data, column_name):
     # updates.
     info("Waiting for results")
     task_id = task.get("id")
-    task = client.get_task(task_id)
+    task = client.task.get(task_id)
     while not task.get("complete"):
-        task = client.get_task(task_id)
+        task = client.task.get(task_id)
         info("Waiting for results")
         time.sleep(1)
 
     # Once we now the partials are complete, we can collect them.
     info("Obtaining results")
-    results = client.get_results(task_id=task.get("id"))
+    results = client.result.get(task_id=task.get("id"))
 
     # Now we can combine the partials to a global average.
     global_sum = 0
