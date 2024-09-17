@@ -9,24 +9,20 @@ from vantage6.algorithm.tools.decorators import algorithm_client, data
 def central_average(client: AlgorithmClient, column_name: str):
     """Combine partials to global model
 
-    First we collect the parties that participate in the collaboration.
-    Then we send a task to all the parties to compute their partial (the
-    row count and the column sum). Then we wait for the results to be
-    ready. Finally when the results are ready, we combine them to a
-    global average.
+    First we collect the parties that participate in the collaboration or study
+    for which the task is created. Then we send a task to all the parties to compute
+    their partial (the row count and the column sum). Then we wait for the results to be
+    ready. Finally when the results are ready, we combine them to a global average.
 
-    Note that the master method also receives the (local) data of the
-    node. In most use cases this data argument is not used.
-
-    The client, provided in the first argument, gives an interface to
+    The algorithm client, provided in the first argument, gives an interface to
     the central server. This is needed to create tasks (for the partial
-    results) and collect their results later on. Note that this client
-    is a different client than the client you use as a user.
+    results) and collect their results later on. Note that this algorithm client
+    is a different client than the user client that you use as a user.
     """
     # Info messages can help you when an algorithm crashes. These info
     # messages are stored in a log file which is send to the server when
     # either a task finished or crashes.
-    info('Collecting participating organizations')
+    info("Collecting participating organizations")
 
     # Collect all organization that participate in this collaboration.
     # These organizations will receive the task to compute the partial.
@@ -37,15 +33,10 @@ def central_average(client: AlgorithmClient, column_name: str):
     # will create a new task at the central server for them to pick up.
     # We've used a kwarg but is is also possible to use `args`. Although
     # we prefer kwargs as it is clearer.
-    info('Requesting partial computation')
+    info("Requesting partial computation")
     task = client.task.create(
-        input_={
-            'method': 'partial_average',
-            'kwargs': {
-                'column_name': column_name
-            }
-        },
-        organizations=ids
+        input_={"method": "partial_average", "kwargs": {"column_name": column_name}},
+        organizations=ids,
     )
 
     # Now we need to wait until all organizations(/nodes) finished
@@ -75,16 +66,13 @@ def partial_average(df: pd.DataFrame, column_name: str):
     data from the node.
     """
     # extract the column_name from the dataframe.
-    info(f'Extracting column {column_name}')
+    info(f"Extracting column {column_name}")
     numbers = df[column_name]
 
     # compute the sum, and count number of rows
-    info('Computing partials')
+    info("Computing partials")
     local_sum = float(numbers.sum())
     local_count = len(numbers)
 
     # return the values as a dict
-    return {
-        "sum": local_sum,
-        "count": local_count
-    }
+    return {"sum": local_sum, "count": local_count}
